@@ -47,7 +47,6 @@ upload, preview, editing, and organization capabilities.
 ### Additional Libraries
 
 - **File Upload**: react-dropzone
-- **Virtual Scrolling**: @tanstack/react-virtual
 - **Notifications**: Sonner
 - **UI Primitives**: @base-ui/react, radix-ui
 

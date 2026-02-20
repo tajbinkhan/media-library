@@ -1,6 +1,8 @@
+
+
 import MediaPreview from "@/templates/Media/Components/MediaPreview";
 import { MediaProvider } from "@/templates/Media/Contexts/MediaContext";
-import MediaPickerGridView from "@/templates/Media/Picker/MediaPickerGridView";
+import MediaPickerModal from "@/templates/Media/Picker/MediaPickerModal";
 
 // MediaItem is defined globally in Types/Media.d.ts
 
@@ -11,6 +13,7 @@ export interface MediaPickerProps {
 	min?: number;
 	max?: number;
 	placeholder?: string;
+	defaultView?: "grid" | "list";
 }
 
 export default function MediaPicker({
@@ -19,8 +22,10 @@ export default function MediaPicker({
 	multiple = false,
 	min = 0,
 	max = 1,
-	placeholder = "Select media"
+	placeholder = "Select media",
+	defaultView = "grid"
 }: MediaPickerProps) {
+
 	const handleMediaSelect = (selectedMedia: MediaItem | MediaItem[] | null) => {
 		if (onChange) {
 			onChange(selectedMedia);
@@ -73,17 +78,17 @@ export default function MediaPicker({
 					</div>
 				</div>
 			)}
-
 			{/* Media Picker */}
 			<MediaProvider>
-				<MediaPickerGridView
-					selectedValue={value as MediaItem | MediaItem[] | null}
-					onSelect={handleMediaSelect}
-					multiple={multiple}
-					min={min}
-					max={max}
-					placeholder={placeholder}
-				/>
+                <MediaPickerModal
+                    selectedValue={value as MediaItem | MediaItem[] | null}
+                    onSelect={handleMediaSelect}
+                    multiple={multiple}
+                    min={min}
+                    max={max}
+                    placeholder={placeholder}
+                    defaultView={defaultView}
+                />
 			</MediaProvider>
 		</div>
 	);

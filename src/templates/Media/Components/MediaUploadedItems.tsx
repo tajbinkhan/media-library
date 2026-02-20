@@ -1,6 +1,5 @@
 "use client";
 
-import { useVirtualizer } from "@tanstack/react-virtual";
 import {
 	AlertCircle,
 	Check,
@@ -15,7 +14,7 @@ import {
 	X
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -224,19 +223,6 @@ export default function MediaUploadedItems({
 	const validFiles = useMemo(() => {
 		return allFiles.filter(item => item.file);
 	}, [allFiles]);
-
-	// Virtualization setup - use for large lists only
-	const parentRef = useRef<HTMLDivElement>(null);
-	const shouldUseVirtualization = validFiles.length > 20;
-
-	// eslint-disable-next-line react-hooks/incompatible-library
-	const rowVirtualizer = useVirtualizer({
-		count: validFiles.length,
-		getScrollElement: () => parentRef.current,
-		estimateSize: () => 120, // Estimated height per item
-		overscan: 5,
-		enabled: shouldUseVirtualization
-	});
 
 	// Render individual file item
 	const renderFileItem = useCallback(
@@ -499,7 +485,7 @@ export default function MediaUploadedItems({
 				<p className="text-sm text-slate-600 dark:text-slate-400">
 					Files ready for upload and rejected files
 				</p>
-				<ScrollArea ref={parentRef} className="h-48 w-full rounded border">
+				<ScrollArea className="h-48 w-full rounded border">
 					{validFiles.length > 0 ? (
 						<div className="space-y-1 p-2">
 							{validFiles.map((item, index) => renderFileItem(item, index))}

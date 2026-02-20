@@ -1,6 +1,5 @@
 "use client";
 
-import { useMediaDownload } from "../Hooks/useMediaDownload";
 import {
 	Calendar,
 	Check,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { useMediaDownload } from "../Hooks/useMediaDownload";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,7 +164,7 @@ export default function MediaSingleView({ item, refresh }: MediaSingleViewProps)
 	return (
 		<>
 			<Card
-				className={`group $border-gray-200 relative transform cursor-pointer overflow-hidden border bg-white py-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-300 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600`}
+				className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl dark:border-gray-800 dark:bg-gray-950 dark:hover:border-blue-900/50 dark:hover:shadow-blue-900/20 p-0`}
 				onClick={handleItemClick}
 			>
 				<CardContent className="p-0">
@@ -196,16 +196,17 @@ export default function MediaSingleView({ item, refresh }: MediaSingleViewProps)
 						)}
 
 						{/* Quick Actions Overlay */}
-						<div className="absolute top-3 right-3 opacity-0 transition-all duration-200 group-hover:opacity-100">
-							<div className="flex flex-col gap-2">
+						<div className="absolute right-3 top-3 translate-x-2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
+							<div className="flex flex-col gap-2 rounded-xl bg-white/20 p-2 shadow-sm backdrop-blur-md dark:bg-black/40 border border-white/20 dark:border-white/10">
 								<Button
 									size="sm"
 									variant="secondary"
-									className="h-8 w-8 bg-white/90 p-0 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900"
+									className="h-8 w-8 rounded-lg bg-white/90 p-0 shadow-sm transition-colors hover:bg-white text-gray-700 hover:text-blue-600 dark:bg-gray-900/90 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-blue-400"
 									onClick={(e: React.MouseEvent) => {
 										e.stopPropagation();
 										handleCopyToClipboard(item.secureUrl);
 									}}
+									title="Copy link"
 								>
 									{copySuccess === `item-${item.secureUrl}` ? (
 										<Check className="h-4 w-4 text-green-500" />
@@ -216,7 +217,7 @@ export default function MediaSingleView({ item, refresh }: MediaSingleViewProps)
 								<Button
 									size="sm"
 									variant="secondary"
-									className="h-8 w-8 bg-white/90 p-0 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900"
+									className="h-8 w-8 rounded-lg bg-white/90 p-0 shadow-sm transition-colors hover:bg-white text-gray-700 hover:text-indigo-600 dark:bg-gray-900/90 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-indigo-400"
 									onClick={(e: React.MouseEvent) => {
 										e.stopPropagation();
 										handleDownloadFile(item);
@@ -242,7 +243,7 @@ export default function MediaSingleView({ item, refresh }: MediaSingleViewProps)
 								<Button
 									variant="destructive"
 									size="sm"
-									className="h-8 w-8 bg-white/90 p-0 shadow-lg hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900"
+									className="h-8 w-8 rounded-lg bg-red-50 p-0 text-red-600 shadow-sm transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
 									onClick={(e: React.MouseEvent) => {
 										e.stopPropagation();
 										handleDeleteStart();
@@ -268,52 +269,46 @@ export default function MediaSingleView({ item, refresh }: MediaSingleViewProps)
 					</div>
 
 					{/* Enhanced File Info */}
-					<div className="bg-white p-4 dark:bg-gray-900">
-						<div className="mb-2 flex items-start justify-between">
-							<div className="min-w-0 flex-1">
+					<div className="flex flex-1 flex-col justify-between bg-white p-4 dark:bg-gray-950 border-t border-gray-50 dark:border-gray-900">
+						<div className="mb-3 flex items-start justify-between">
+							<div className="min-w-0 flex-1 pr-3">
 								<h4
-									className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100"
+									className="truncate text-sm font-medium text-gray-800 transition-colors group-hover:text-blue-600 dark:text-gray-200 dark:group-hover:text-blue-400"
 									title={item.filename || "Unknown file"}
 								>
 									{item.filename || "Unknown file"}
 								</h4>
-								{item.altText && (
+								{(item.altText || fileTypeLabel) && (
 									<p
-										className="truncate text-xs text-gray-500 dark:text-gray-400"
-										title={item.altText}
+										className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400"
+										title={item.altText || fileTypeLabel}
 									>
-										{item.altText}
+										{item.altText || fileTypeLabel}
 									</p>
 								)}
 							</div>
 							{/* Edit Button */}
 							<Button
-								variant="ghost"
+								variant="outline"
 								size="sm"
-								className="h-6 w-6 shrink-0 p-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+								className="h-7 w-7 shrink-0 rounded-full p-0 opacity-0 transition-all duration-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-500 group-hover:opacity-100 dark:hover:border-orange-900/50 dark:hover:bg-orange-900/20"
 								onClick={(e: React.MouseEvent) => {
 									e.stopPropagation();
 									handleEditStart();
 								}}
 								title="Edit details"
 							>
-								<Edit3 className="h-3 w-3 text-gray-400 hover:text-orange-500" />
+								<Edit3 className="h-3.5 w-3.5" />
 							</Button>
 						</div>
 
-						<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-							<div className="flex flex-col gap-1">
-								<span className="font-medium text-gray-600 dark:text-gray-400">
-									{formatFileSize(item.fileSize)}
-								</span>
-								{item.width && item.height && (
-									<span className="text-gray-500 dark:text-gray-500">
-										{item.width} × {item.height}
-									</span>
-								)}
-							</div>
-							<span className="flex items-center text-gray-400 dark:text-gray-500">
-								<Calendar className="mr-1 h-3 w-3" />
+						<div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-100 dark:border-gray-800/50 mt-auto">
+							<span className="font-medium">
+								{formatFileSize(item.fileSize)}
+								{item.width && item.height && <span className="ml-1 opacity-70">({item.width}×{item.height})</span>}
+							</span>
+							<span className="flex items-center">
+								<Calendar className="mr-1.5 h-3.5 w-3.5 opacity-70" />
 								{formatDate(item.createdAt)}
 							</span>
 						</div>

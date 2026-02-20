@@ -199,10 +199,34 @@ interface MediaTemplateProps {
  * Props for MediaGridView component
  */
 interface MediaGridViewProps {
+	/** Current view mode */
+	viewMode?: "grid" | "list";
+	/** Callback to change view mode */
+	onViewModeChange?: (mode: "grid" | "list") => void;
 	/** Callback when a media item is selected */
 	onItemSelect?: (item: MediaItem) => void;
 	/** Callback when a media item is deleted */
 	onItemDelete?: (item: MediaItem) => void;
+	/** Callback for upload button click */
+	onUpload?: () => void;
+	/** Custom class name */
+	className?: string;
+}
+
+/**
+ * Props for MediaListView component
+ */
+interface MediaListViewProps {
+	/** Current view mode */
+	viewMode?: "grid" | "list";
+	/** Callback to change view mode */
+	onViewModeChange?: (mode: "grid" | "list") => void;
+	/** Callback when a media item is selected */
+	onItemSelect?: (item: MediaItem) => void;
+	/** Callback when a media item is deleted */
+	onItemDelete?: (item: MediaItem) => void;
+	/** Callback for upload button click */
+	onUpload?: () => void;
 	/** Custom class name */
 	className?: string;
 }
@@ -394,6 +418,24 @@ interface MediaItemResponse {
 }
 
 /**
+ * Query parameters for media list API
+ */
+interface MediaQueryParams {
+	/** Current page number */
+	page?: number;
+	/** Number of items per page */
+	limit?: number;
+	/** Search query string */
+	search?: string;
+	/** Sort field */
+	sortBy?: "id" | "filename" | "fileSize" | "createdAt";
+	/** Sort order */
+	sortOrder?: "asc" | "desc";
+	/** Offset for pagination */
+	offset?: number;
+}
+
+/**
  * Response for media list API
  */
 interface MediaListResponse {
@@ -405,8 +447,11 @@ interface MediaListResponse {
 		totalPages: number;
 		totalItems: number;
 		limit: number;
+		offset: number;
 		hasNextPage: boolean;
 		hasPrevPage: boolean;
+		prevPage: number | null;
+		nextPage: number | null;
 	};
 }
 

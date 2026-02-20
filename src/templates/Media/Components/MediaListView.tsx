@@ -1,49 +1,71 @@
 "use client";
 
 import {
-	ArrowDown,
-	ArrowUp,
-	Clock,
-	FileImage,
-	Grid3X3,
-	HardDrive,
-	List,
-	Loader2,
-	Search,
-	Trash2,
-	Upload,
-	X
+    ArrowDown,
+    ArrowUp,
+    Calendar,
+    Clock,
+    Download,
+    Edit,
+    FileImage,
+    Grid3X3,
+    HardDrive,
+    List,
+    Loader2,
+    MoreVertical,
+    Search,
+    Trash2,
+    Upload,
+    X
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import Image from "next/image";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { useMediaDownload } from "@/templates/Media/Hooks/useMediaDownload";
 import { useMediaListQuery } from "@/templates/Media/Redux/MediaAPISlice";
-import MediaSingleView from "./MediaSingleView";
+import MediaDeleteAlert from "./MediaDeleteAlert";
+import MediaEditModal from "./MediaEditModal";
+import MediaPreviewModal from "./MediaPreviewModal";
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export default function MediaGridView({ onUpload, viewMode, onViewModeChange, className = "" }: MediaGridViewProps) {
+export default function MediaListView({ onUpload, viewMode, onViewModeChange, className = "" }: MediaListViewProps) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sortBy, setSortBy] = useState<"id" | "filename" | "fileSize" | "createdAt">("createdAt");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 	const [page, setPage] = useState(1);
 	const [limit] = useState(20);
 
-	// Fetch media list using Redux RTK Query
+	// State for modals
+	const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
+	const [editItem, setEditItem] = useState<MediaItem | null>(null);
+	const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
+
+	const { download } = useMediaDownload();
+
+	// Fetch media list
 	const {
 		data: response,
 		error,
@@ -62,6 +84,28 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 	// Utility Functions
 	// ========================================================================
 
+	const formatDate = (dateString: string | undefined): string => {
+		if (!dateString) return "Unknown";
+		try {
+			return new Date(dateString).toLocaleDateString("en-US", {
+				month: "short",
+				day: "numeric",
+				year: "numeric",
+				hour: "2-digit",
+				minute: "2-digit"
+			});
+		} catch {
+			return "Unknown";
+		}
+	};
+
+	const formatFileSize = (bytes: number | undefined): string => {
+		if (!bytes) return "Unknown";
+		const sizes = ["B", "KB", "MB", "GB"];
+		const i = Math.floor(Math.log(bytes) / Math.log(1024));
+		return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+	};
+
 	const isImageFile = (type: string | undefined): boolean => {
 		return Boolean(type && type.startsWith("image/"));
 	};
@@ -70,7 +114,7 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 	// Data Processing
 	// ========================================================================
 
-	const mediaItems = useMemo(() => response?.data || [], [response?.data]);
+	const mediaItems = response?.data || [];
 	const pagination = response?.pagination;
 	const hasNextPage = pagination?.hasNextPage || false;
 
@@ -99,14 +143,8 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 		setPage(1);
 	};
 
-	// Check if filters are active
-	const hasActiveFilters = searchQuery || sortBy !== "createdAt" || sortOrder !== "desc";
-
-	const handleClearFilters = () => {
-		setSearchQuery("");
-		setSortBy("createdAt");
-		setSortOrder("desc");
-		setPage(1);
+	const handleDownload = async (item: MediaItem) => {
+		await download(item);
 	};
 
 	// ========================================================================
@@ -114,25 +152,15 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 	// ========================================================================
 
 	const renderLoadingSkeleton = () => (
-		<div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-			{Array.from({ length: 12 }).map((_, index) => (
-				<Card
-					key={index}
-					className="group overflow-hidden border-0 bg-linear-to-br from-gray-50 to-gray-100 shadow-sm transition-all duration-300 hover:shadow-md dark:from-gray-900 dark:to-gray-800"
-				>
-					<CardContent className="p-0">
-						<div className="relative">
-							<Skeleton className="aspect-square w-full rounded-t-lg" />
-							<div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
-						</div>
-						<div className="space-y-3 p-4">
-							<Skeleton className="h-4 w-full" />
-							<div className="flex items-center justify-between">
-								<Skeleton className="h-3 w-12" />
-								<Skeleton className="h-3 w-16" />
-							</div>
-						</div>
-					</CardContent>
+		<div className="space-y-3">
+			{Array.from({ length: 5 }).map((_, index) => (
+				<Card key={index} className="flex items-center gap-4 p-4">
+					<Skeleton className="h-16 w-16 rounded-md" />
+					<div className="flex-1 space-y-2">
+						<Skeleton className="h-4 w-3/4" />
+						<Skeleton className="h-3 w-1/2" />
+					</div>
+					<Skeleton className="h-8 w-8" />
 				</Card>
 			))}
 		</div>
@@ -147,8 +175,7 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 				No media files yet
 			</h3>
 			<p className="mb-6 max-w-md text-sm text-gray-500 dark:text-gray-400">
-				Start building your media library by uploading your first files. Drag and drop or click the
-				upload button to get started.
+				Start building your media library by uploading your first files.
 			</p>
 			<Button
 				onClick={onUpload}
@@ -179,12 +206,7 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 						? error.message
 						: "Something went wrong while fetching your media files. Please try again."}
 			</p>
-			<Button
-				type="button"
-				onClick={refresh}
-				variant="outline"
-				className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-			>
+			<Button type="button" onClick={() => refresh()} variant="destructive">
 				Try Again
 			</Button>
 		</div>
@@ -196,12 +218,9 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 			<h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
 				No results found
 			</h3>
-			<p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+			<p className="text-sm text-gray-500 dark:text-gray-400">
 				Try adjusting your search or filters
 			</p>
-			<Button onClick={() => handleSearchChange("")} variant="outline">
-				Clear Search
-			</Button>
 		</div>
 	);
 
@@ -209,8 +228,18 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 	// Main Render
 	// ========================================================================
 
+	// Check if filters are active
+	const hasActiveFilters = searchQuery || sortBy !== "createdAt" || sortOrder !== "desc";
+
+	const handleClearFilters = () => {
+		setSearchQuery("");
+		setSortBy("createdAt");
+		setSortOrder("desc");
+		setPage(1);
+	};
+
 	return (
-		<div className={`w-full ${className}`}>
+		<div className={`space-y-6 ${className}`}>
 			{/* Compact Premium Header */}
 			<div className="mb-6 space-y-4">
 				{/* Top Row: Title, Search, View Switcher, Upload */}
@@ -234,15 +263,6 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 								<span>
 									<strong className="text-gray-700 dark:text-gray-300">{mediaItems.length}</strong> items
 								</span>
-							)}
-							{mediaItems.length > 0 && (
-								<>
-									<span className="text-gray-300 dark:text-gray-700">•</span>
-									<span className="flex items-center gap-1">
-										<FileImage className="h-3.5 w-3.5 text-blue-500" />
-										{mediaItems.filter(item => isImageFile(item.mimeType)).length} images
-									</span>
-								</>
 							)}
 						</p>
 					</div>
@@ -381,27 +401,109 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 				)
 			) : (
 				<>
+					{/* List Items */}
 					<ScrollArea
 						className="w-full"
 						style={{
-							height: `calc(100vh - 320px)`,
+							height: `calc(100vh - 350px)`,
 							maxHeight: "800px",
 							minHeight: "400px"
 						}}
 					>
-						<div className="pr-4">
-							<div className="grid grid-cols-2 gap-6 p-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-								{mediaItems.map(item => (
-									<MediaSingleView key={item.publicId} item={item} refresh={refresh} />
-								))}
-							</div>
+						<div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+							{mediaItems.map((item, index) => (
+								<div
+									key={item.publicId}
+									className={`group flex items-center gap-4 p-3 sm:p-4 transition-colors hover:bg-gray-50 hover:shadow-inner dark:hover:bg-white/5 ${
+										index !== mediaItems.length - 1 ? "border-b border-gray-100 dark:border-gray-800/50" : ""
+									}`}
+								>
+									{/* Thumbnail */}
+									<div
+										className="relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-100 dark:border-gray-800"
+										onClick={() => setPreviewItem(item)}
+									>
+										{isImageFile(item.mimeType) ? (
+											<Image
+												src={item.secureUrl}
+												alt={item.altText || item.filename}
+												className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+												width={64}
+												height={64}
+											/>
+										) : (
+											<div className="flex h-full w-full items-center justify-center">
+												<FileImage className="h-8 w-8 text-gray-400" />
+											</div>
+										)}
+									</div>
+
+									{/* Details */}
+									<div className="flex-1 overflow-hidden">
+										<h4
+											className="cursor-pointer truncate text-sm sm:text-base font-medium text-gray-900 transition-colors group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400"
+											onClick={() => setPreviewItem(item)}
+										>
+											{item.filename}
+										</h4>
+										<div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
+											<span className="flex items-center gap-1.5 font-medium">
+												<HardDrive className="h-3.5 w-3.5 opacity-70" />
+												{formatFileSize(item.fileSize)}
+											</span>
+											<span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+											<span className="flex items-center gap-1.5">
+												<Calendar className="h-3.5 w-3.5 opacity-70" />
+												{formatDate(item.createdAt)}
+											</span>
+											{item.width && item.height && (
+												<>
+													<span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+													<span className="flex items-center gap-1.5 opacity-80">
+														<FileImage className="h-3 w-3 opacity-70" />
+														{item.width} × {item.height}
+													</span>
+												</>
+											)}
+										</div>
+									</div>
+
+									{/* Actions */}
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+												<MoreVertical className="h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem onClick={() => setPreviewItem(item)}>
+												<FileImage className="mr-2 h-4 w-4" />
+												Preview
+											</DropdownMenuItem>
+											<DropdownMenuItem onClick={() => setEditItem(item)}>
+												<Edit className="mr-2 h-4 w-4" />
+												Edit
+											</DropdownMenuItem>
+											<DropdownMenuItem onClick={() => handleDownload(item)}>
+												<Download className="mr-2 h-4 w-4" />
+												Download
+											</DropdownMenuItem>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-red-600">
+												<Trash2 className="mr-2 h-4 w-4" />
+												Delete
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
+							))}
 						</div>
 						<ScrollBar orientation="vertical" />
 					</ScrollArea>
 
 					{/* Load More Button */}
 					{hasNextPage && (
-						<div className="mt-6 flex justify-center">
+						<div className="flex justify-center pt-6">
 							<Button
 								onClick={handleLoadMore}
 								disabled={isFetching}
@@ -412,7 +514,7 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 								{isFetching ? (
 									<>
 										<Loader2 className="h-4 w-4 animate-spin" />
-										Loading more...
+										Loading...
 									</>
 								) : (
 									<>Load More</>
@@ -422,10 +524,38 @@ export default function MediaGridView({ onUpload, viewMode, onViewModeChange, cl
 					)}
 				</>
 			)}
+
+			{/* Modals */}
+			{previewItem && (
+				<MediaPreviewModal
+					item={previewItem}
+					onClose={() => setPreviewItem(null)}
+					refresh={refresh}
+				/>
+			)}
+
+			{editItem && (
+				<MediaEditModal
+					item={editItem}
+					onClose={() => setEditItem(null)}
+					onSave={() => {
+						setEditItem(null);
+						refresh();
+					}}
+					onCancel={() => setEditItem(null)}
+				/>
+			)}
+
+			{deleteItem && (
+				<MediaDeleteAlert
+					item={deleteItem}
+					onClose={() => setDeleteItem(null)}
+					onSuccess={() => {
+						setDeleteItem(null);
+						refresh();
+					}}
+				/>
+			)}
 		</div>
 	);
 }
-
-// ============================================================================
-// Export
-// ============================================================================
